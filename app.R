@@ -1,7 +1,5 @@
 library(shiny)
 library(shinydashboard)
-library(RODBC)
-library(nzr)  #nettenza R package
 library(dplyr)
 library(tidyr)
 library(lubridate)
