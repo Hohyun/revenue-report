@@ -16,35 +16,134 @@ load("revenue.RData")
 ## load functions
 source("util.R", encoding = "UTF-8")
 
-# UI: summary veiw -------------------------------------------------
+# 0.1 Read Me page ---------------------------------------------------------------------------
+read_me <- fluidPage(
+  title = "도움말",
+  
+  box(title = "기간", width = 6, status = "primary", solidHeader = TRUE,
+      wellPanel(
+        strong("주간 실적 : "), wtd_s_date, " ~ ", wtd_e_date, br(),
+        strong("월간 실적 : "), mtd_s_date, " ~ ", mtd_e_date, br(),
+        strong("년간 실적 : "), ytd_s_date, " ~ ", ytd_e_date
+      )
+  ),
+  box(title = "단위", width = 6, status = "primary", solidHeader = TRUE,
+      wellPanel(
+        strong("수익 실적 : "), "억원", br(),
+        strong("수송 승객 : "), "만명", br(),
+        strong("화물 중량 : "), "만톤"
+      )
+  ),
+  box(title = "용어", width = 12, status = "primary", solidHeader = TRUE,
+      wellPanel(
+        strong("YoY "), strong(em("(Year on Year) :")), "금년 실적 / 전년 실적 (%)", br(),
+        strong("+/- "), "전년 대비 증감 수치", br(),
+        strong("P.I "), "ⓟ ", strong(em("(Performance Index) : ")), "금년 실적을 전년 동기간 평균환율로 환산한 금액 / 전년 실적 (%)"
+      )
+  ),
+  box(title = "범례", width = 12, status = "primary", solidHeader = TRUE,
+      column(4,
+             infoBox("PAX", 
+                     myFormat(round(rev_wtd_pax_t, 0)),
+                     sprintf("%.1f%%, %s, %.1f%%", 
+                             rev_wtd_pax_t / rev_wtd_pax_t_prv * 100, 
+                             myDiff(rev_wtd_pax_t, rev_wtd_pax_t_prv, 0),
+                             rev_wtd_pax_t1 / rev_wtd_pax_t_prv * 100),  
+                     icon = myIcon(rev_wtd_pax_t, rev_wtd_pax_t_prv), width = 12,
+                     color = myColor(rev_wtd_pax_t, rev_wtd_pax_t_prv)
+             ),
+             infoBox("사업 구분", 
+                     "노선 실적",
+                     sprintf("%s, %s, %s", 
+                             "YoY", "+/-", "P.I"),
+                     icon = myIcon(rev_wtd_pax_t, rev_wtd_pax_t_prv), width = 12,
+                     color = myColor(rev_wtd_pax_t, rev_wtd_pax_t_prv)
+             )
+      ),
+      column(4,
+             infoBox("금주 실적", 
+                     myFormat(round(rev_wtd_pax_s, 0)),
+                     sprintf("%.1f%% ⓟ", rev_wtd_pax_s1 / rev_wtd_pax_s_prv * 100),
+                     icon = icon("credit-card"), width = 12,
+                     color = "blue"),
+             infoBox("실적 구분", 
+                     sprintf("%s", "노선실적"),
+                     sprintf("%s", "P.I"),
+                     icon = icon("credit-card"), width = 12,
+                     color = "blue")
+      ),
+      column(4,
+             infoBox("전년 대비", 
+                     sprintf("%.1f%%", rev_wtd_pax_s / rev_wtd_pax_s_prv * 100),
+                     myDiff(rev_wtd_pax_s, rev_wtd_pax_s_prv, 0), 
+                     icon = myIcon(rev_wtd_pax_s, rev_wtd_pax_s_prv), width = 12,
+                     color = myColor(rev_wtd_pax_s, rev_wtd_pax_s_prv)),
+             infoBox("대비 기준", 
+                     sprintf("%s", "YoY"),
+                     sprintf("%s", "+/-"),
+                     icon = myIcon(rev_wtd_pax_s, rev_wtd_pax_s_prv), width = 12,
+                     color = myColor(rev_wtd_pax_s, rev_wtd_pax_s_prv))
+      )
+  )
+)
+
+# 0.2 Update Data ----------------------------------------------------------------
+update_data <- fluidPage(
+  
+  titlePanel("Update data!"),
+  
+  sidebarLayout(
+    
+    sidebarPanel(
+      dateInput("AsOfDate", label = span("As of Date"), value = today() - wday(today())), 
+      textInput("bi_dsn", "BI DSN", value = bi.dsn), 
+      textInput("erp_id", "ERP ID", value = erp.id), 
+      textInput("erp_pswd", "ERP PSWD", value = erp.pswd), hr(),
+      actionButton("update", strong("Update Data"), width = "100%")
+    ),
+    
+    mainPanel(
+      wellPanel(
+        strong("- 요구 사항 : "), "BI 접속용 ODBC가 PC에 설정되어 있어야 함.", br(),
+        strong("- 소요 시간 : "), "약 25~35초 소요 예상.", br(),
+        strong("- 유의 사항 : "), "작업이 끝난 후 ", span("App을 재 실행", style="color:red"), "요망.", br(),
+        strong("- 기준일    : "), "최근 토요일로 자동 수행됨.", hr(),
+        "- ERP ID, PSWD가 변경된 경우 util.R을 열어 해당 부분을 수정해야 함.", br(),
+        "- 좌측은 정보 안내용임. (프로그램 수행 시 반영되지 않음)"
+      )
+    )
+  )
+)
+
+# 1. summary veiw -------------------------------------------------
 summary_view <- fluidRow(
-  box(title = sprintf("노선 수익 현황 (as of: %s, 억원)", wtd_e_date), width = 12, solidHeader = FALSE, status = "primary",
+  box(width = 12,
       column(4, 
              box(
                title = "주간 실적", width = NULL, solidHeader = TRUE, status = "primary",
                infoBox("PAX", 
                        myFormat(round(rev_wtd_pax_t, 0)),
-                       sprintf("%.1f%%, %.1f%%", 
+                       sprintf("%.1f%%, %s, %.1f%%", 
                                rev_wtd_pax_t / rev_wtd_pax_t_prv * 100, 
-                               # myDiff(rev_wtd_pax_t, rev_wtd_pax_t_prv, 0),
+                               myDiff(rev_wtd_pax_t, rev_wtd_pax_t_prv, 0),
                                rev_wtd_pax_t1 / rev_wtd_pax_t_prv * 100),  
                        icon = myIcon(rev_wtd_pax_t, rev_wtd_pax_t_prv), width = 12,
                        color = myColor(rev_wtd_pax_t, rev_wtd_pax_t_prv)),
                infoBox("CGO", 
                        myFormat(round(rev_wtd_cgo_t, 0)),
-                       sprintf("%.1f%%, %.1f%%", 
+                       sprintf("%.1f%%, %s, %.1f%%", 
                                rev_wtd_cgo_t / rev_wtd_cgo_t_prv * 100,
-                               # myDiff(rev_wtd_cgo_t, rev_wtd_cgo_t_prv, 0)
+                               myDiff(rev_wtd_cgo_t, rev_wtd_cgo_t_prv, 0),
                                rev_wtd_cgo_t1 / rev_wtd_cgo_t_prv * 100),
                        icon = myIcon(rev_wtd_cgo_t, rev_wtd_cgo_t_prv), width = 12,
                        color = myColor(rev_wtd_cgo_t, rev_wtd_cgo_t_prv)),
                infoBox("TTL", 
                        myFormat(round(rev_wtd_pax_t + rev_wtd_cgo_t, 0)),
-                       sprintf("%.1f%%, %.1f%%", 
+                       sprintf("%.1f%%, %s, %.1f%%", 
                                (rev_wtd_pax_t + rev_wtd_cgo_t) / 
                                  (rev_wtd_pax_t_prv + rev_wtd_cgo_t_prv) * 100,
-                               # myDiff(rev_wtd_pax_t + rev_wtd_cgo_t, 
-                               #        rev_wtd_pax_t_prv + rev_wtd_cgo_t_prv, 0)
+                               myDiff(rev_wtd_pax_t + rev_wtd_cgo_t, 
+                                      rev_wtd_pax_t_prv + rev_wtd_cgo_t_prv, 0),
                                (rev_wtd_pax_t1 + rev_wtd_cgo_t1) / 
                                  (rev_wtd_pax_t_prv + rev_wtd_cgo_t_prv) * 100),
                        icon = myIcon((rev_wtd_pax_t + rev_wtd_cgo_t), 
@@ -58,27 +157,27 @@ summary_view <- fluidRow(
                title = "월간 실적", width = NULL, solidHeader = TRUE, status = "primary",
                infoBox("PAX", 
                        myFormat(round(rev_wtd_pax_t, 0)),
-                       sprintf("%.1f%%, %.1f%%", 
+                       sprintf("%.1f%%, %s, %.1f%%", 
                                rev_mtd_pax / rev_mtd_pax_prv * 100, 
-                               # myDiff(rev_mtd_pax, rev_mtd_pax_prv, 0)
+                               myDiff(rev_mtd_pax, rev_mtd_pax_prv, 0),
                                rev_mtd_pax_t1 / rev_mtd_pax_prv * 100),
                        icon = myIcon(rev_mtd_pax, rev_mtd_pax_prv), width = 12,
                        color = myColor(rev_mtd_pax, rev_mtd_pax_prv)),
                infoBox("CGO", 
                        myFormat(round(rev_mtd_cgo, 0)),
-                       sprintf("%.1f%%, %.1f%%", 
+                       sprintf("%.1f%%, %s, %.1f%%", 
                                rev_mtd_cgo / rev_mtd_cgo_prv * 100,
-                               # myDiff(rev_mtd_cgo, rev_mtd_cgo_prv, 0)
+                               myDiff(rev_mtd_cgo, rev_mtd_cgo_prv, 0),
                                rev_mtd_cgo_t1 / rev_mtd_cgo_prv * 100),
                        icon = myIcon(rev_mtd_cgo, rev_mtd_cgo_prv), width = 12,
                        color = myColor(rev_mtd_cgo, rev_mtd_cgo_prv)),
                infoBox("TTL", 
                        myFormat(round(rev_mtd_pax + rev_mtd_cgo, 0)),
-                       sprintf("%.1f%%, %.1f%%", 
+                       sprintf("%.1f%%, %s, %.1f%%", 
                                (rev_mtd_pax + rev_mtd_cgo) / 
                                  (rev_mtd_pax_prv + rev_mtd_cgo_prv) * 100,
-                               # myDiff(rev_mtd_pax + rev_mtd_cgo, 
-                               #        rev_mtd_pax_prv + rev_mtd_cgo_prv, 0)
+                               myDiff(rev_mtd_pax + rev_mtd_cgo, 
+                                      rev_mtd_pax_prv + rev_mtd_cgo_prv, 0),
                                (rev_mtd_pax_t1 + rev_mtd_cgo_t1) / 
                                  (rev_mtd_pax_prv + rev_mtd_cgo_prv) * 100),
                        icon = myIcon((rev_mtd_pax + rev_mtd_cgo), 
@@ -88,31 +187,31 @@ summary_view <- fluidRow(
                                        (rev_mtd_pax_prv + rev_mtd_cgo_prv)))
              )),
       column(4, 
-            box(
+             box(
                title = "년간 실적", width = NULL, solidHeader = TRUE, status = "primary",
                infoBox("PAX", 
                        myFormat(round(rev_ytd_pax, 0)),
-                       sprintf("%.1f%%, %.1f%%", 
+                       sprintf("%.1f%%, %s, %.1f%%", 
                                rev_ytd_pax / rev_ytd_pax_prv * 100, 
-                               # myDiff(rev_ytd_pax, rev_ytd_pax_prv, 0)
+                               myDiff(rev_ytd_pax, rev_ytd_pax_prv, 0),
                                rev_ytd_pax_t1 / rev_ytd_pax_prv * 100),
                        icon = myIcon(rev_ytd_pax, rev_ytd_pax_prv), width = 12,
                        color = myColor(rev_ytd_pax, rev_ytd_pax_prv)),
                infoBox("CGO", 
                        myFormat(round(rev_ytd_cgo, 0)),
-                       sprintf("%.1f%%, %.1f%%", 
+                       sprintf("%.1f%%, %s, %.1f%%", 
                                rev_ytd_cgo / rev_ytd_cgo_prv * 100,
-                               # myDiff(rev_ytd_cgo, rev_ytd_cgo_prv, 0)
+                               myDiff(rev_ytd_cgo, rev_ytd_cgo_prv, 0),
                                rev_ytd_cgo_t1 / rev_ytd_cgo_prv * 100),
                        icon = myIcon(rev_ytd_cgo, rev_ytd_cgo_prv), width = 12,
                        color = myColor(rev_ytd_cgo, rev_ytd_cgo_prv)),
                infoBox("TTL", 
                        myFormat(round(rev_ytd_pax + rev_ytd_cgo, 0)),
-                       sprintf("%.1f%%, %.1f%%", 
+                       sprintf("%.1f%%, %s, %.1f%%", 
                                (rev_ytd_pax + rev_ytd_cgo) / 
                                  (rev_ytd_pax_prv + rev_ytd_cgo_prv) * 100,
-                               # myDiff(rev_ytd_pax + rev_ytd_cgo, 
-                               #        rev_ytd_pax_prv + rev_ytd_cgo_prv, 0)
+                               myDiff(rev_ytd_pax + rev_ytd_cgo, 
+                                      rev_ytd_pax_prv + rev_ytd_cgo_prv, 0),
                                (rev_ytd_pax_t1 + rev_ytd_cgo_t1) / 
                                  (rev_ytd_pax_prv + rev_ytd_cgo_prv) * 100),
                        icon = myIcon((rev_ytd_pax + rev_ytd_cgo), 
@@ -120,15 +219,32 @@ summary_view <- fluidRow(
                        width = 12, fill = TRUE,
                        color = myColor((rev_ytd_pax + rev_ytd_cgo), 
                                        (rev_ytd_pax_prv + rev_ytd_cgo_prv)))
-             ))
+             )
+      )
+  ),
+  box(width = 12,
+      box(width = 4, title = "Legend", solidHeader = FALSE, status = "info",
+          infoBox("사업 구분", 
+                  "노선 실적",
+                  sprintf("%s, %s, %s", 
+                          "YoY", "+/-", "P.I"),
+                  icon = myIcon(rev_wtd_pax_t, rev_wtd_pax_t_prv), width = 12,
+                  color = myColor(rev_wtd_pax_t, rev_wtd_pax_t_prv)
+          )
+      ),
+      box(title = "Terminology", width = 8, status = "info", solidHeader = FALSE,
+          wellPanel(
+            span(strong("YoY "), style="color:red"), strong(em("(Year on Year)")), ": 금년 실적 / 전년 실적 (%), ",
+            span(strong("+/- "), style="color:red"), ": 전년 대비 증감 수치", br(),
+            span(strong("P.I "), "ⓟ ",  style="color:red"), strong(em("(Performance Index) ")), ": 금년 실적을 전년 동기간 평균환율로 환산한 금액 / 전년 실적 (%)"
+          )
+      )
   )
 )
 
-# UI: revenue (week) ---------------------------------------------------------------------
+# 2-1 revenue (week) ---------------------------------------------------------------------
 dashboard_week_rev <- fluidRow(
-  box(title = sprintf("주간 노선수익 --- %s, 억원", myDateFormat(wtd_s_date, wtd_e_date)), 
-      width = 12, solidHeader = FALSE, 
-      
+  box(width = 12,
       column(4,
              box(
                title = "여객 발매", width = NULL, solidHeader = TRUE, status = "primary",
@@ -173,21 +289,20 @@ dashboard_week_rev <- fluidRow(
                        icon = myIcon(rev_wtd_cgo_t, rev_wtd_cgo_t_prv), width = 12,
                        color = myColor(rev_wtd_cgo_t, rev_wtd_cgo_t_prv))
              )
+      ),
+      column(12, 
+             datatable(revenue_df_week, options = list(dom = 't'),
+                       colnames = c('Gubun', year(wtd_e_date), year(wtd_e_date)-1, '+/-', 'YoY', 'P.I'),
+                       class = 'cell-border stripe', rownames = FALSE) %>%
+               formatCurrency(c('this', 'last', 'diff'), '') %>%
+               formatPercentage(c('pct', 'index'), 1)
       )
-  ),
-  box(width = 12, 
-      datatable(revenue_df_week, options = list(dom = 't'),
-                colnames = c('Gubun', year(wtd_e_date), year(wtd_e_date)-1, '+/-', '%', 'P.I'),
-                class = 'cell-border stripe', rownames = FALSE) %>%
-        formatCurrency(c('this', 'last', 'diff'), '') %>%
-        formatPercentage(c('pct', 'index'), 1)
   )
 )
 
-# UI: count & wt (week) ---------------------------------------------------------------------
+# 2-2 count & wt (week) ---------------------------------------------------------------------
 dashboard_week_count_wt <- fluidRow(
-  box(title = sprintf("주간 수송 --- %s, 만명/만톤", myDateFormat(wtd_s_date, wtd_e_date)),
-      width = 12, solidHeader = FALSE, status = "primary",
+  box(width = 12,
       column(6,
              box(
                title = "수송 승객", width = NULL, solidHeader = TRUE, status = "primary",
@@ -217,97 +332,89 @@ dashboard_week_count_wt <- fluidRow(
                        icon = myIcon(cgo_wt, cgo_wt_prv), width = 12,
                        color = myColor(cgo_wt, cgo_wt_prv))
              )
-      )
-  ),
-  box(width = 12, 
-      datatable(cnt_wt_df_week, options = list(dom = 't'),
-                colnames = c('Gubun', year(wtd_e_date), year(wtd_e_date)-1, '+/-', '%'),
-                class = 'cell-border stripe', rownames = FALSE) %>%
-        formatCurrency(c('this', 'last', 'diff'), '') %>%
-        formatPercentage(c('pct'), 1)
-  )
-)
-
-# UI: weekly trend graph ----------------------------------------------------------
-dashboard_week_trend <- fluidRow(
-  box(title = "주별 실적 추이 (총수익)", solidHeader = TRUE, status = "primary", width = 12,
-      dygraphOutput("dygraph_weekly_rev")
-  ),
-  box(title = "주별 실적 추이 (수송)", solidHeader = TRUE, status = "primary", width = 12,
-      dygraphOutput("dygraph_weekly_cnt_wt")
-  )
-)
-
-# UI: all revenue (month) -------------------------------------------------------
-dashboard_month_all_rev <- fluidRow(
-  ### MTD
-  box(title = sprintf("월간 총 노선수익 --- %s, 억원", myDateFormat(mtd_s_date, wtd_e_date)), 
-      width = 12, solidHeader = FALSE, status = "primary", 
-    
-    box(
-      title = "Passenger", width = 4, solidHeader = TRUE, status = "primary", 
-      infoBox("노선수익", 
-              myFormat(round(rev_mtd_pax, 0)), 
-              sprintf("%.1f%% ⓟ", rev_mtd_pax_t1 / rev_mtd_pax_prv * 100),
-              icon = icon("credit-card"), 
-              color = "blue", width = 12),
-      infoBox("전년대비", 
-              sprintf("%.1f%%", rev_mtd_pax / rev_mtd_pax_prv * 100), 
-              myDiff(rev_mtd_pax, rev_mtd_pax_prv, 0), 
-              icon = myIcon(rev_mtd_pax, rev_mtd_pax_prv),  width = 12,  
-              color = myColor(rev_mtd_pax, rev_mtd_pax_prv))
-    ),
-  
-    box(
-      title = "Cargo", width = 4, solidHeader = TRUE, status = "primary",
-      infoBox("노선수익", 
-              myFormat(round(rev_mtd_cgo, 0)), 
-              sprintf("%.1f%% ⓟ", rev_mtd_cgo_t1 / rev_mtd_cgo_prv * 100),
-              icon = icon("credit-card"), color = "blue", width = 12),
-      infoBox("전년대비", 
-              sprintf("%.1f%%", rev_mtd_cgo / rev_mtd_cgo_prv * 100), 
-              myDiff(rev_mtd_cgo, rev_mtd_cgo_prv, 0), 
-              icon = myIcon(rev_mtd_cgo, rev_mtd_cgo_prv),  width = 12,  
-              color = myColor(rev_mtd_cgo, rev_mtd_cgo_prv))
-    ),
-  
-    box(
-      title = "Total", width = 4, solidHeader = TRUE, status = "primary",
-      infoBox("노선수익", 
-              myFormat(round(rev_mtd_pax + rev_mtd_cgo, 0)),
-              sprintf("%.1f%% ⓟ", (rev_mtd_pax_t1 + rev_mtd_cgo_t1) / (rev_mtd_pax_prv + rev_mtd_cgo_prv) * 100),
-              icon = icon("credit-card"), color = "blue", width = 12),
-      infoBox("전년대비", 
-             sprintf("%.1f%%", (rev_mtd_pax + rev_mtd_cgo) / (rev_mtd_pax_prv + rev_mtd_cgo_prv) * 100), 
-              myDiff(rev_mtd_pax + rev_mtd_cgo, rev_mtd_pax_prv + rev_mtd_cgo_prv, 0), 
-             icon = myIcon(rev_mtd_pax + rev_mtd_cgo, rev_mtd_pax_prv + rev_mtd_cgo_prv),  width = 12,  
-             color = myColor(rev_mtd_pax + rev_mtd_cgo, rev_mtd_pax_prv + rev_mtd_cgo_prv))
       ),
-    
-    box(
-      width = 12,
-      datatable(revenue_df_month_all, options = list(dom = 't'), 
-                colnames = c('PC', year(wtd_e_date), year(wtd_e_date)-1, '+/-', '%', "P.I"),
-                class = 'cell-border stripe', rownames = FALSE)  %>%
-        formatCurrency(c('this', 'last', 'diff'), '') %>%
-        formatPercentage(c('pct', 'index'), 1)
-    )
+      column(12,
+             datatable(cnt_wt_df_week, options = list(dom = 't'),
+                       colnames = c('Gubun', year(wtd_e_date), year(wtd_e_date)-1, '+/-', 'YoY'),
+                       class = 'cell-border stripe', rownames = FALSE) %>%
+               formatCurrency(c('this', 'last', 'diff'), '') %>%
+               formatPercentage(c('pct'), 1)
+      )
   )
 )
 
-# UI: net revenue (month) --------------------------------------------------------------------------------
+# 2-3 weekly trend graph ----------------------------------------------------------
+dashboard_week_trend <- fluidRow(
+  box(width = 12,
+      box(title = "주별 실적 추이 (총수익)", solidHeader = TRUE, status = "primary", width = 12,
+          dygraphOutput("dygraph_weekly_rev")
+      ),
+      box(title = "주별 실적 추이 (수송)", solidHeader = TRUE, status = "primary", width = 12,
+          dygraphOutput("dygraph_weekly_cnt_wt")
+      )
+  )
+)
+
+# 3-1 all revenue (month) -------------------------------------------------------
+dashboard_month_all_rev <- fluidRow(
+  box(width = 12,
+      box(
+        title = "Passenger", width = 4, solidHeader = TRUE, status = "primary", 
+        infoBox("금월 실적", 
+                myFormat(round(rev_mtd_pax, 0)), 
+                sprintf("%.1f%% ⓟ", rev_mtd_pax_t1 / rev_mtd_pax_prv * 100),
+                icon = icon("credit-card"), 
+                color = "blue", width = 12),
+        infoBox("전년 대비", 
+                sprintf("%.1f%%", rev_mtd_pax / rev_mtd_pax_prv * 100), 
+                myDiff(rev_mtd_pax, rev_mtd_pax_prv, 0), 
+                icon = myIcon(rev_mtd_pax, rev_mtd_pax_prv),  width = 12,  
+                color = myColor(rev_mtd_pax, rev_mtd_pax_prv))
+      ),
+      box(
+        title = "Cargo", width = 4, solidHeader = TRUE, status = "primary",
+        infoBox("금월 실적", 
+                myFormat(round(rev_mtd_cgo, 0)), 
+                sprintf("%.1f%% ⓟ", rev_mtd_cgo_t1 / rev_mtd_cgo_prv * 100),
+                icon = icon("credit-card"), color = "blue", width = 12),
+        infoBox("전년 대비", 
+                sprintf("%.1f%%", rev_mtd_cgo / rev_mtd_cgo_prv * 100), 
+                myDiff(rev_mtd_cgo, rev_mtd_cgo_prv, 0), 
+                icon = myIcon(rev_mtd_cgo, rev_mtd_cgo_prv),  width = 12,  
+                color = myColor(rev_mtd_cgo, rev_mtd_cgo_prv))
+      ),
+      box(
+        title = "Total", width = 4, solidHeader = TRUE, status = "primary",
+        infoBox("금월 실적", 
+                myFormat(round(rev_mtd_pax + rev_mtd_cgo, 0)),
+                sprintf("%.1f%% ⓟ", (rev_mtd_pax_t1 + rev_mtd_cgo_t1) / (rev_mtd_pax_prv + rev_mtd_cgo_prv) * 100),
+                icon = icon("credit-card"), color = "blue", width = 12),
+        infoBox("전년 대비", 
+                sprintf("%.1f%%", (rev_mtd_pax + rev_mtd_cgo) / (rev_mtd_pax_prv + rev_mtd_cgo_prv) * 100), 
+                myDiff(rev_mtd_pax + rev_mtd_cgo, rev_mtd_pax_prv + rev_mtd_cgo_prv, 0), 
+                icon = myIcon(rev_mtd_pax + rev_mtd_cgo, rev_mtd_pax_prv + rev_mtd_cgo_prv),  width = 12,  
+                color = myColor(rev_mtd_pax + rev_mtd_cgo, rev_mtd_pax_prv + rev_mtd_cgo_prv))
+      ),
+      column(12,
+             datatable(revenue_df_month_all, options = list(dom = 't'), 
+                       colnames = c('PC', year(wtd_e_date), year(wtd_e_date)-1, '+/-', 'YoY', "P.I"),
+                       class = 'cell-border stripe', rownames = FALSE)  %>%
+               formatCurrency(c('this', 'last', 'diff'), '') %>%
+               formatPercentage(c('pct', 'index'), 1)
+      )
+  )
+)
+
+# 3-2 net revenue (month) --------------------------------------------------------------------------------
 dashboard_month_net_rev <- fluidRow(
-  ### MTD
-  box(title =sprintf("월간 순 노선수익 --- %s, 억원", myDateFormat(mtd_s_date, wtd_e_date)),
-      width = 12, solidHeader = FALSE, status = "primary",
-      
+  box(width = 12,
       box(
         title = "Passenger", width = 4, solidHeader = TRUE, status = "primary",
-        infoBox("노선수익", 
+        infoBox("금월 실적", 
                 myFormat(round(rev_mtd_pax_net, 0)), 
                 icon = icon("credit-card"), 
                 color = "blue", width = 12),
-        infoBox("전년대비", 
+        infoBox("전년 대비", 
                 sprintf("%.1f%%", rev_mtd_pax_net / rev_mtd_pax_net_prv * 100), 
                 myDiff(rev_mtd_pax_net, rev_mtd_pax_net_prv, 0), 
                 icon = myIcon(rev_mtd_pax_net, rev_mtd_pax_net_prv),  width = 12,  
@@ -316,11 +423,11 @@ dashboard_month_net_rev <- fluidRow(
       
       box(
         title = "Cargo", width = 4, solidHeader = TRUE, status = "primary",
-        infoBox("노선수익", 
+        infoBox("금월 실적", 
                 format(round(rev_mtd_cgo_net, 0), digit = 5, big.mark = ","), 
                 format(round(rev_mtd_cgo_net_prv, 0), digit = 5, big.mark = ","),
                 icon = icon("credit-card"), color = "blue", width = 12),
-        infoBox("전년대비", 
+        infoBox("전년 대비", 
                 sprintf("%.1f%%", rev_mtd_cgo_net / rev_mtd_cgo_net_prv * 100), 
                 myDiff(rev_mtd_cgo_net, rev_mtd_cgo_net_prv, 0), 
                 icon = myIcon(rev_mtd_cgo_net, rev_mtd_cgo_net_prv),  width = 12,  
@@ -329,48 +436,45 @@ dashboard_month_net_rev <- fluidRow(
       
       box(
         title = "Total", width = 4, solidHeader = TRUE, status = "primary",
-        infoBox("노선수익", 
+        infoBox("금월 실적", 
                 myFormat(round(rev_mtd_pax_net + rev_mtd_cgo_net, 0)), 
                 icon = icon("credit-card"), color = "blue", width = 12),
-        infoBox("전년대비", 
+        infoBox("전년 대비", 
                 sprintf("%.1f%%", (rev_mtd_pax + rev_mtd_cgo) / (rev_mtd_pax_prv + rev_mtd_cgo_prv) * 100), 
                 myDiff(rev_mtd_pax_net + rev_mtd_cgo_net, rev_mtd_pax_net_prv + rev_mtd_cgo_net_prv, 0), 
                 icon = myIcon(rev_mtd_pax_net + rev_mtd_cgo_net, rev_mtd_pax_net_prv + rev_mtd_cgo_net_prv),  width = 12,  
                 color = myColor(rev_mtd_pax_net + rev_mtd_cgo_net, rev_mtd_pax_net_prv + rev_mtd_cgo_net_prv)
         )
       ),
-      
-      box(
-        width = 12,
-        datatable(revenue_df_month_net, options = list(dom = 't'), 
-                  colnames = c('PC', year(wtd_e_date), year(wtd_e_date)-1, '+/-', '%'),
-                  class = 'cell-border stripe', rownames = FALSE)  %>%
-          formatCurrency(c('this', 'last', 'diff'), '') %>%
-          formatPercentage(c('pct'), 1)
+      column(12,
+             datatable(revenue_df_month_net, options = list(dom = 't'), 
+                       colnames = c('PC', year(wtd_e_date), year(wtd_e_date)-1, '+/-', 'YoY'),
+                       class = 'cell-border stripe', rownames = FALSE)  %>%
+               formatCurrency(c('this', 'last', 'diff'), '') %>%
+               formatPercentage(c('pct'), 1)
       )
-    )
+  )
 )  
 
-# UI: monthly trend graph ----------------------------------------------------------
+# 3-3 monthly trend graph ----------------------------------------------------------
 dashboard_month_trend <- fluidRow(
-  box(title = "월별 실적 추이 (총수익)", solidHeader = TRUE, status = "primary", width = 12,
-      dygraphOutput("dygraph_monthly_trend")
+  box(width = 12,
+      box(title = "월별 실적 추이 (총수익)", solidHeader = TRUE, status = "primary", width = 12,
+          dygraphOutput("dygraph_monthly_trend")
+      )
   )
 )
 
-# UI: all revenue (year) -------------------------------------------------------
+# 4-1 all revenue (year) -------------------------------------------------------
 dashboard_year_all_rev <- fluidRow(
-  ### YTD
-  box(title = sprintf("년간 총 노선수익 --- %s, 억원", myDateFormat(ytd_s_date, wtd_e_date)), 
-      width = 12, solidHeader = FALSE, status = "primary",
-      
+  box(width = 12,
       box(
         title = "Passenger", width = 4, solidHeader = TRUE, status = "primary",
-        infoBox("노선수익", 
+        infoBox("금년 실적", 
                 myFormat(round(rev_ytd_pax, 0)), 
                 sprintf("%.1f%% ⓟ", rev_ytd_pax_t1 / rev_ytd_pax_prv * 100),
                 icon = icon("credit-card"), color = "blue", width = 12),
-        infoBox("전년대비", 
+        infoBox("전년 대비", 
                 sprintf("%.1f%%", rev_ytd_pax / rev_ytd_pax_prv * 100), 
                 myDiff(rev_ytd_pax, rev_ytd_pax_prv, 0), 
                 icon = myIcon(rev_ytd_pax, rev_ytd_pax_prv),  width = 12,  
@@ -379,11 +483,11 @@ dashboard_year_all_rev <- fluidRow(
       
       box(
         title = "Cargo", width = 4, solidHeader = TRUE, status = "primary",
-        infoBox("노선수익", 
+        infoBox("금년 실적", 
                 myFormat(round(rev_ytd_cgo, 0)), 
                 sprintf("%.1f%% ⓟ", rev_ytd_cgo_t1 / rev_ytd_cgo_prv * 100),
                 icon = icon("credit-card"), color = "blue", width = 12),
-        infoBox("전년대비", 
+        infoBox("전년 대비", 
                 sprintf("%.1f%%", rev_ytd_cgo / rev_ytd_cgo_prv * 100), 
                 myDiff(rev_ytd_cgo, rev_ytd_cgo_prv, 0), 
                 icon = myIcon(rev_ytd_cgo, rev_ytd_cgo_prv),  width = 12,  
@@ -392,40 +496,36 @@ dashboard_year_all_rev <- fluidRow(
       
       box(
         title = "Total", width = 4, solidHeader = TRUE, status = "primary",
-        infoBox("노선수익", 
+        infoBox("금년 실적", 
                 myFormat(round(rev_ytd_pax + rev_ytd_cgo, 0)), 
                 sprintf("%.1f%% ⓟ", (rev_ytd_pax + rev_ytd_cgo) / (rev_ytd_pax_prv + rev_ytd_cgo_prv) * 100), 
                 #myFormat(round(rev_ytd_pax_prv + rev_ytd_cgo_prv, 0)),
                 icon = icon("credit-card"), color = "blue", width = 12),
-        infoBox("전년대비", 
+        infoBox("전년 대비", 
                 sprintf("%.1f%%", (rev_ytd_pax + rev_ytd_cgo) / (rev_ytd_pax_prv + rev_ytd_cgo_prv) * 100), 
                 myDiff(rev_ytd_pax + rev_ytd_cgo, rev_ytd_pax_prv + rev_ytd_cgo_prv, 0), 
                 icon = myIcon(rev_ytd_pax + rev_ytd_cgo, rev_ytd_pax_prv + rev_ytd_cgo_prv),  width = 12,  
                 color = myColor(rev_ytd_pax + rev_ytd_cgo, rev_ytd_pax_prv + rev_ytd_cgo_prv))
       ),
-      box(
-        width = 12,
-        datatable(revenue_df_year_all, options = list(dom = 't'), 
-                  colnames = c('PC', year(wtd_e_date), year(wtd_e_date)-1, '+/-', '%', "P.I"),
-                  class = 'cell-border stripe', rownames = FALSE)  %>%
-          formatCurrency(c('this', 'last', 'diff'), '') %>%
-          formatPercentage(c('pct', 'index'), 1)
+      column(12,
+             datatable(revenue_df_year_all, options = list(dom = 't'), 
+                       colnames = c('PC', year(wtd_e_date), year(wtd_e_date)-1, '+/-', 'YoY', "P.I"),
+                       class = 'cell-border stripe', rownames = FALSE)  %>%
+               formatCurrency(c('this', 'last', 'diff'), '') %>%
+               formatPercentage(c('pct', 'index'), 1)
       )
   )
 )
 
-# UI: net revenue (year) --------------------------------------------------------------------------------
+# 4-2 net revenue (year) --------------------------------------------------------------------------------
 dashboard_year_net_rev <- fluidRow(
-  ### YTD
-  box(title = sprintf("년간 순 노선수익 --- %s, 억원", myDateFormat(ytd_s_date, wtd_e_date)), 
-      width = 12, solidHeader = FALSE, status = "primary",
-      
+  box(width = 12,
       box(
         title = "Passenger", width = 4, solidHeader = TRUE, status = "primary",
-        infoBox("노선수익", 
+        infoBox("금년 실적", 
                 myFormat(round(rev_ytd_pax_net, 0)), 
                 icon = icon("credit-card"), color = "blue", width = 12),
-        infoBox("전년대비", 
+        infoBox("전년 대비", 
                 sprintf("%.1f%%", rev_ytd_pax_net / rev_ytd_pax_net_prv * 100), 
                 myDiff(rev_ytd_pax_net, rev_ytd_pax_net_prv, 0), 
                 icon = myIcon(rev_ytd_pax_net, rev_ytd_pax_net_prv),  width = 12,  
@@ -434,10 +534,10 @@ dashboard_year_net_rev <- fluidRow(
       
       box(
         title = "Cargo", width = 4, solidHeader = TRUE, status = "primary",
-        infoBox("노선수익", 
+        infoBox("금년 실적", 
                 myFormat(round(rev_ytd_cgo_net, 0)), 
                 icon = icon("credit-card"), color = "blue", width = 12),
-        infoBox("전년대비", 
+        infoBox("전년 대비", 
                 sprintf("%.1f%%", rev_ytd_cgo_net / rev_ytd_cgo_net_prv * 100), 
                 myDiff(rev_ytd_cgo_net, rev_ytd_cgo_net_prv, 0), 
                 icon = myIcon(rev_ytd_cgo_net, rev_ytd_cgo_net_prv),  width = 12,  
@@ -446,134 +546,117 @@ dashboard_year_net_rev <- fluidRow(
       
       box(
         title = "Total", width = 4, solidHeader = TRUE, status = "primary",
-        infoBox("노선수익", 
+        infoBox("금년 실적", 
                 myFormat(round(rev_ytd_pax_net + rev_ytd_cgo_net, 0)), 
                 icon = icon("credit-card"), color = "blue", width = 12),
-        infoBox("전년대비", 
+        infoBox("전년 대비", 
                 sprintf("%.1f%%", (rev_ytd_pax_net + rev_ytd_cgo_net) / (rev_ytd_pax_net_prv + rev_ytd_cgo_net_prv) * 100), 
                 myDiff(rev_ytd_pax_net + rev_ytd_cgo_net, rev_ytd_pax_net_prv + rev_ytd_cgo_net_prv, 0), 
                 icon = myIcon(rev_ytd_pax_net + rev_ytd_cgo_net, rev_ytd_pax_net_prv + rev_ytd_cgo_net_prv),  width = 12,  
                 color = myColor(rev_ytd_pax_net + rev_ytd_cgo_net, rev_ytd_pax_net_prv + rev_ytd_cgo_net_prv))
       ),
-      box(
-        width = 12,
-        datatable(revenue_df_year_net, options = list(dom = 't'), 
-                  colnames = c('PC', year(wtd_e_date), year(wtd_e_date)-1, '+/-', '%'),
-                  class = 'cell-border stripe', rownames = FALSE)  %>%
-          formatCurrency(c('this', 'last', 'diff'), '') %>%
-          formatPercentage(c('pct'), 1)
+      column(12,
+             datatable(revenue_df_year_net, options = list(dom = 't'), 
+                       colnames = c('PC', year(wtd_e_date), year(wtd_e_date)-1, '+/-', 'YoY'),
+                       class = 'cell-border stripe', rownames = FALSE)  %>%
+               formatCurrency(c('this', 'last', 'diff'), '') %>%
+               formatPercentage(c('pct'), 1)
       )
   )
 )
 
-# UI: Table headers ---------------------------------------------------------------------
-### table header
-table_header1 = htmltools::withTags(table(
-  class = 'display',
-  thead(
-    tr(
-      th(rowspan = 2, "PC"),
-      th(''), th(colspan = 3, 
-                 sprintf("MTD (%s)", myDateFormat(mtd_s_date, mtd_e_date))),
-      th(''), th(colspan = 3, 
-                 sprintf("YTD (%s)", myDateFormat(ytd_s_date, ytd_e_date)))
-    ),
-    tr(
-      th(year(mtd_e_date)), th(year(mtd_e_date)-1), th("+/-"), th("%"),
-      th(year(ytd_e_date)), th(year(ytd_e_date)-1), th("+/-"), th("%")
-    )
-  )
-))
-
-# UI: Data view (week) ----------------------------------------------------
-data_view_week <- fluidRow(
-  box(
-    title = "주간 실적", width = 12, solidHeader = TRUE, status = "primary",
-    datatable(arrange(source_df_week, desc(DATE)), 
-              class = 'cell-border stripe', rownames = FALSE)  %>%
-      formatCurrency(c('PAX_S_REV', 'PAX_T_REV', 'CGO_T_REV'), '')
-  )
-)
-
-# UI: Data view (month) ------------------------------------------------------
-data_view_month <- fluidRow(
-  box(
-    title = "월간 실적", width = 12, solidHeader = TRUE, status = "primary",
-    datatable(arrange(source_df_month, desc(DATE)), 
-            class = 'cell-border stripe', rownames = FALSE) %>%
-      formatCurrency(c('PAX_S_REV', 'PAX_T_REV', 'CGO_T_REV'), '')
-  )
-)
-
-# UI: Data view (legacy)  -----------------------------------------------------------
+# 5-1 Data view (legacy)  -----------------------------------------------------------
 tables_view <- fluidRow(
-  box(title = "주간: 총 노선실적 (억원)", 
-      width = 7, solidHeader = TRUE, status = "primary",
-      datatable(revenue_df_week, options = list(dom = 't'),
-                colnames = c('Gubun', year(wtd_e_date), year(wtd_e_date)-1, '+/-', '%', 'P.I'),
-                class = 'cell-border stripe', rownames = FALSE) %>%
-        formatCurrency(c('this', 'last', 'diff'), '') %>%
-        formatPercentage(c('pct', 'index'), 1)
-  ),
-  box(title = "주간: 수송실적 (만명/만톤)", 
-      width = 5, solidHeader = TRUE, status = "primary",
-      datatable(cnt_wt_df_week, options = list(dom = 't'),
-                colnames = c('Gubun', year(wtd_e_date), year(wtd_e_date)-1, '+/-', '%'),
-                class = 'cell-border stripe', rownames = FALSE) %>%
-        formatCurrency(c('this', 'last', 'diff'), '') %>%
-        formatPercentage(c('pct'), 1)
-  ),
-  box(title = "월간: 총 노선실적 (억원)", 
-      width = 7, solidHeader = TRUE, status = "primary",
-      datatable(revenue_df_month_all, options = list(dom = 't'), 
-                colnames = c('PC', year(wtd_e_date), year(wtd_e_date)-1, '+/-', '%', "P.I"),
-                class = 'cell-border stripe', rownames = FALSE)  %>%
-        formatCurrency(c('this', 'last', 'diff'), '') %>%
-        formatPercentage(c('pct', 'index'), 1)
-  ),
-  box(title = "월간: 순 노선실적", 
-      width = 5, solidHeader = TRUE, status = "primary",
-      datatable(revenue_df_month_net, options = list(dom = 't'), 
-                colnames = c('PC', year(wtd_e_date), year(wtd_e_date)-1, '+/-', '%'),
-                class = 'cell-border stripe', rownames = FALSE)  %>%
-        formatCurrency(c('this', 'last', 'diff'), '') %>%
-        formatPercentage(c('pct'), 1)
-  ),  
-  box(title = "년간: 총 노선실적 (억원)", 
-      width = 7, solidHeader = TRUE, status = "primary",
-      datatable(revenue_df_year_all, options = list(dom = 't'), 
-                colnames = c('PC', year(wtd_e_date), year(wtd_e_date)-1, '+/-', '%', "P.I"),
-                class = 'cell-border stripe', rownames = FALSE)  %>%
-        formatCurrency(c('this', 'last', 'diff'), '') %>%
-        formatPercentage(c('pct', 'index'), 1)
-  ),
-  box(title = "년간: 순 노선실적", 
-      width = 5, solidHeader = TRUE, status = "primary",
-      datatable(revenue_df_year_net, options = list(dom = 't'), 
-                colnames = c('PC', year(wtd_e_date), year(wtd_e_date)-1, '+/-', '%'),
-                class = 'cell-border stripe', rownames = FALSE)  %>%
-        formatCurrency(c('this', 'last', 'diff'), '') %>%
-        formatPercentage(c('pct'), 1)
+  box(width = 12,
+      
+      box(title = "주간: 총 노선실적 (억원)", 
+          width = 7, solidHeader = TRUE, status = "primary",
+          datatable(revenue_df_week, options = list(dom = 't'),
+                    colnames = c('Gubun', year(wtd_e_date), year(wtd_e_date)-1, '+/-', 'YoY', 'P.I'),
+                    class = 'cell-border stripe', rownames = FALSE) %>%
+            formatCurrency(c('this', 'last', 'diff'), '') %>%
+            formatPercentage(c('pct', 'index'), 1)
+      ),
+      box(title = "주간: 수송실적 (만명/만톤)", 
+          width = 5, solidHeader = TRUE, status = "primary",
+          datatable(cnt_wt_df_week, options = list(dom = 't'),
+                    colnames = c('Gubun', year(wtd_e_date), year(wtd_e_date)-1, '+/-', 'YoY'),
+                    class = 'cell-border stripe', rownames = FALSE) %>%
+            formatCurrency(c('this', 'last', 'diff'), '') %>%
+            formatPercentage(c('pct'), 1)
+      ),
+      box(title = "월간: 총 노선실적 (억원)", 
+          width = 7, solidHeader = TRUE, status = "primary",
+          datatable(revenue_df_month_all, options = list(dom = 't'), 
+                    colnames = c('PC', year(wtd_e_date), year(wtd_e_date)-1, '+/-', 'YoY', "P.I"),
+                    class = 'cell-border stripe', rownames = FALSE)  %>%
+            formatCurrency(c('this', 'last', 'diff'), '') %>%
+            formatPercentage(c('pct', 'index'), 1)
+      ),
+      box(title = "월간: 순 노선실적", 
+          width = 5, solidHeader = TRUE, status = "primary",
+          datatable(revenue_df_month_net, options = list(dom = 't'), 
+                    colnames = c('PC', year(wtd_e_date), year(wtd_e_date)-1, '+/-', 'YoY'),
+                    class = 'cell-border stripe', rownames = FALSE)  %>%
+            formatCurrency(c('this', 'last', 'diff'), '') %>%
+            formatPercentage(c('pct'), 1)
+      ),  
+      box(title = "년간: 총 노선실적 (억원)", 
+          width = 7, solidHeader = TRUE, status = "primary",
+          datatable(revenue_df_year_all, options = list(dom = 't'), 
+                    colnames = c('PC', year(wtd_e_date), year(wtd_e_date)-1, '+/-', 'YoY', "P.I"),
+                    class = 'cell-border stripe', rownames = FALSE)  %>%
+            formatCurrency(c('this', 'last', 'diff'), '') %>%
+            formatPercentage(c('pct', 'index'), 1)
+      ),
+      box(title = "년간: 순 노선실적", 
+          width = 5, solidHeader = TRUE, status = "primary",
+          datatable(revenue_df_year_net, options = list(dom = 't'), 
+                    colnames = c('PC', year(wtd_e_date), year(wtd_e_date)-1, '+/-', 'YoY'),
+                    class = 'cell-border stripe', rownames = FALSE)  %>%
+            formatCurrency(c('this', 'last', 'diff'), '') %>%
+            formatPercentage(c('pct'), 1)
+      )
+  )
+)
+
+# 5-1 Data view (week) ----------------------------------------------------
+data_view_week <- fluidRow(
+  box(width = 12,
+      box(
+        title = "주간 실적", width = 12, solidHeader = TRUE, status = "primary",
+        datatable(arrange(source_df_week, desc(DATE)), 
+                  class = 'cell-border stripe', rownames = FALSE)  %>%
+          formatCurrency(c('PAX_S_REV', 'PAX_T_REV', 'CGO_T_REV'), '')
+      )
+  )
+)
+
+# 5-2 Data view (month) ------------------------------------------------------
+data_view_month <- fluidRow(
+  box(width = 12,
+      box(
+        title = "월간 실적", width = 12, solidHeader = TRUE, status = "primary",
+        datatable(arrange(source_df_month, desc(DATE)), 
+                  class = 'cell-border stripe', rownames = FALSE) %>%
+          formatCurrency(c('PAX_S_REV', 'PAX_T_REV', 'CGO_T_REV'), '')
+      )
   )
 )
 
 # UI: Dashboard constructor ---------------------------------------------------------------
 header <- dashboardHeader(
-  titleWidth = 200,
-  title = "주간 실적 보고",
+  titleWidth = 180,
+  title = sprintf("실적 현황 : %s", paste(month(wtd_e_date), day(wtd_e_date), sep = "/")),
   dropdownMenuOutput("messageMenu")
 )
 
 sidebar <- dashboardSidebar(
-  width = 200,
-  fluidRow(
-    column(width = 12,
-           dateInput("AsOfDate", label = span("As of Date"), width = '60%', value = wtd_e_date))
-  ),
-  
+  width = 180,
   sidebarMenu(
-    id = "tabs1",
-    menuItem("종합 현황", tabName = "summary_view", icon = icon("dashboard")),
+    menuItem("Read Me", tabName = "read_me", icon = icon("comment")),
+    menuItem("Update", tabName = "update_data", icon = icon("download")),
+    menuItem("종합 현황", tabName = "summary_view", icon = icon("dashboard"), selected = TRUE),
     menuItem("주간 실적", icon = icon("calendar"),
              menuSubItem("주간 수익", tabName = "dashboard_week_rev", icon = icon("credit-card-alt")),
              menuSubItem("주간 수송", tabName = "dashboard_week_count_wt", icon = icon("users")),
@@ -593,17 +676,14 @@ sidebar <- dashboardSidebar(
              menuSubItem("도표 종합", tabName = "tables_view", icon = icon("list-ul")),
              menuSubItem("주간 자료", tabName = "data_view_week", icon = icon("list-ul")),
              menuSubItem("월간 자료", tabName = "data_view_month", icon = icon("list-ul"))
-    )   
-  ),
-  fluidRow(
-    box(width = 12, background = "navy",
-        actionButton("update", "Update Data", width = '55%')
     )
   )
 )
 
 body <- dashboardBody(
   tabItems(
+    tabItem(tabName = "read_me", read_me),
+    tabItem(tabName = "update_data", update_data),
     tabItem(tabName = "summary_view", summary_view),
     tabItem(tabName = "dashboard_week_rev", dashboard_week_rev),
     tabItem(tabName = "dashboard_week_count_wt", dashboard_week_count_wt),
