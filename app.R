@@ -797,11 +797,18 @@ server <- function(input, output) {
       source("prepareData.R", encoding = "UTF-8")
     })
     
+    # report creation for e-mail
+    rmarkdown::render("weekly_revenue_report.Rmd", encoding = "utf-8")
+    
     output$messageMenu <- renderMenu({
       dropdownMenu(type = "notifications",
                    notificationItem(
                      text = (sprintf("Data updated time: %s", last_updated_time)),
                      icon = icon("info-circle"),
+                     status = "success"),
+                   notificationItem(
+                     text = "E-mail report was created successfully.",
+                     icon = icon("file-text"),
                      status = "success"),
                    notificationItem(
                      text = "You should restart app.",
