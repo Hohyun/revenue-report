@@ -85,10 +85,10 @@ read_me <- fluidPage(
   )
 )
 
-# 0.2 Update Data ----------------------------------------------------------------
-update_data <- fluidPage(
+# 0.2 Refresh Data ----------------------------------------------------------------
+refresh_data <- fluidPage(
   
-  titlePanel("Update data!"),
+  titlePanel("Refresh data!"),
   
   sidebarLayout(
     
@@ -306,7 +306,6 @@ dashboard_week_count_wt <- fluidRow(
                title = "수송 승객", width = NULL, solidHeader = TRUE, status = "primary",
                infoBox("금주 실적", 
                        myFormat(round(pax_count, 1)),
-                       sprintf("%.1f%% ⓟ", pax_count / pax_count_prv * 100),
                        icon = icon("users"), width = 12,
                        color = "blue"),
                infoBox("전년 대비", 
@@ -321,7 +320,6 @@ dashboard_week_count_wt <- fluidRow(
                title = "수송 톤수", width = NULL, solidHeader = TRUE, status = "primary",
                infoBox("금주 실적", 
                        myFormat(round(cgo_wt, 2)),
-                       sprintf("%.1f%% ⓟ", cgo_wt / cgo_wt_prv * 100),
                        icon = icon("truck"), width = 12,
                        color = "blue"),
                infoBox("전년 대비", 
@@ -653,7 +651,7 @@ sidebar <- dashboardSidebar(
   width = 180,
   sidebarMenu(
     menuItem("Read Me", tabName = "read_me", icon = icon("comment")),
-    menuItem("Update", tabName = "update_data", icon = icon("download")),
+    menuItem("Refresh Data", tabName = "refresh_data", icon = icon("refresh")),
     menuItem("종합 현황", tabName = "summary_view", icon = icon("dashboard"), selected = TRUE),
     menuItem("주간 실적", icon = icon("calendar"),
              menuSubItem("주간 수익", tabName = "dashboard_week_rev", icon = icon("credit-card-alt")),
@@ -681,7 +679,7 @@ sidebar <- dashboardSidebar(
 body <- dashboardBody(
   tabItems(
     tabItem(tabName = "read_me", read_me),
-    tabItem(tabName = "update_data", update_data),
+    tabItem(tabName = "refresh_data", refresh_data),
     tabItem(tabName = "summary_view", summary_view),
     tabItem(tabName = "dashboard_week_rev", dashboard_week_rev),
     tabItem(tabName = "dashboard_week_count_wt", dashboard_week_count_wt),
@@ -719,6 +717,7 @@ server <- function(input, output) {
                 to   = as.character(index(weekly_trend)[shades[3,3]])) %>%
       dyShading(from = as.character(index(weekly_trend)[shades[4,2]]),  
                 to   = as.character(index(weekly_trend)[shades[4,3]])) %>%
+      dyEvent("2015-07-04", "Mers", labelLoc = "bottom") %>%
       dyLimit(as.numeric(limits[1,1])) %>%
       dyLimit(as.numeric(limits[1,2])) %>%
       dyLegend(showZeroValues = "always", hideOnMouseOut = TRUE) %>%
@@ -747,6 +746,7 @@ server <- function(input, output) {
                 to   = as.character(index(weekly_trend)[shades[3,3]])) %>%
       dyShading(from = as.character(index(weekly_trend)[shades[4,2]]),  
                 to   = as.character(index(weekly_trend)[shades[4,3]])) %>%
+      dyEvent("2015-07-04", "Mers", labelLoc = "bottom") %>%
       dyLimit(as.numeric(limits[1,1])) %>%
       dyLimit(as.numeric(limits[1,2]) * 5) %>%
       dyLegend(showZeroValues = "always", hideOnMouseOut = TRUE) %>%
@@ -784,9 +784,10 @@ server <- function(input, output) {
                 to   = as.character(mtd_s_date - months(23))) %>%
       dyShading(from = as.character(mtd_s_date - months(37)),  
                 to   = as.character(mtd_s_date - months(35))) %>%
+      dyEvent("2015-06-01", "Mers", labelLoc = "bottom") %>%
+      #dyEvent(mtd_s_date, "", labelLoc = "bottom") %>%
       dyLimit(as.numeric(limits[3])) %>%
       dyLimit(as.numeric(limits[6])) %>%
-      dyEvent(mtd_s_date, "", labelLoc = "bottom") %>%
       dyLegend(showZeroValues = "always", hideOnMouseOut = TRUE) %>%
       dyRangeSelector(height = 20) 
   })
