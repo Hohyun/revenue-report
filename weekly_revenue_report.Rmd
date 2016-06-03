@@ -87,7 +87,7 @@ Row
 ### 주간
 
 - `r myDateFormat(wtd_s_date, wtd_e_date)`, 총수익, 억원
-- YoY, +/-, P.I
+- 전년대비, 증감액, Index
 
 ### PAX: `r wp_comment`
 
@@ -119,7 +119,7 @@ Row
 ### 월간
 
 - `r myDateFormat(mtd_s_date, mtd_e_date)`, 총수익, 억원
-- YoY, +/-, P.I
+- 전년대비, 증감액, Index
 
 ### PAX: `r mp_comment`
 
@@ -152,7 +152,7 @@ Row
 ### 년간
 
 - `r myDateFormat(ytd_s_date, ytd_e_date)`, 총수익, 억원 
-- YoY, +/-, P.I
+- 전년대비, 증감액, Index
 
 ### PAX: `r yp_comment`
 
@@ -260,7 +260,7 @@ Row
 
 - 기간: `r myDateFormat(wtd_s_date, wtd_e_date)`
 - 총 노선수익, 억원, 만명, 만톤
-- YoY, +/-, P.I
+- 전년대비, 증감액, Index
 
 ### 승객 수: `r wp_cnt_comment`
 
