@@ -1,0 +1,528 @@
+---
+title: "주간 실적 보고"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    vertical_layout: fill
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(dplyr)
+library(lubridate)
+library(xts)
+library(DT)
+library(dygraphs)
+source("util.R", encoding = "UTF-8")
+load("revenue.RData")
+
+vbColor <- function(a, b) {
+  rate <- a / b
+  if (rate >= 1) {
+    "success"
+  } else if (rate >= 0.9) {
+    "warning"
+  } else {
+    "danger"
+  }
+}
+# dashboard comments ------------------------------------------------------------------------------------
+wp_comment <- sprintf("%.1f%%, %s, %.1f%%", 
+                      rev_wtd_pax_t / rev_wtd_pax_t_prv * 100, 
+                      myDiff(rev_wtd_pax_t, rev_wtd_pax_t_prv, 0),
+                      rev_wtd_pax_t1 / rev_wtd_pax_t_prv * 100)
+wp_s_comment <- sprintf("%.1f%%, %s, %.1f%%", 
+                      rev_wtd_pax_s / rev_wtd_pax_s_prv * 100, 
+                      myDiff(rev_wtd_pax_s, rev_wtd_pax_s_prv, 0),
+                      rev_wtd_pax_s1 / rev_wtd_pax_s_prv * 100)
+wc_comment <- sprintf("%.1f%%, %s, %.1f%%", 
+                      rev_wtd_cgo_t / rev_wtd_cgo_t_prv * 100,
+                      myDiff(rev_wtd_cgo_t, rev_wtd_cgo_t_prv, 0),
+                      rev_wtd_cgo_t1 / rev_wtd_cgo_t_prv * 100)
+wt_comment <- sprintf("%.1f%%, %s, %.1f%%", 
+                      (rev_wtd_pax_t + rev_wtd_cgo_t) / (rev_wtd_pax_t_prv + rev_wtd_cgo_t_prv) * 100,
+                      myDiff(rev_wtd_pax_t + rev_wtd_cgo_t, rev_wtd_pax_t_prv + rev_wtd_cgo_t_prv, 0),
+                      (rev_wtd_pax_t1 + rev_wtd_cgo_t1) / (rev_wtd_pax_t_prv + rev_wtd_cgo_t_prv) * 100)
+wp_cnt_comment <- sprintf("%.1f%%, %s", 
+                      pax_count / pax_count_prv * 100, 
+                      myDiff(pax_count, pax_count_prv, 0))
+wc_wt_comment <- sprintf("%.1f%%, %s", 
+                      cgo_wt / cgo_wt_prv * 100,
+                      myDiff(cgo_wt, cgo_wt_prv, 0))
+mp_comment <- sprintf("%.1f%%, %s, %.1f%%", 
+                      rev_mtd_pax / rev_mtd_pax_prv * 100, 
+                      myDiff(rev_mtd_pax, rev_mtd_pax_prv, 0),
+                      rev_mtd_pax_t1 / rev_mtd_pax_prv * 100)
+mc_comment <- sprintf("%.1f%%, %s, %.1f%%", 
+                      rev_mtd_cgo / rev_mtd_cgo_prv * 100,
+                      myDiff(rev_mtd_cgo, rev_mtd_cgo_prv, 0),
+                      rev_mtd_cgo_t1 / rev_mtd_cgo_prv * 100)
+mt_comment <- sprintf("%.1f%%, %s, %.1f%%", 
+                      (rev_mtd_pax + rev_mtd_cgo) / (rev_mtd_pax_prv + rev_mtd_cgo_prv) * 100,
+                      myDiff(rev_mtd_pax + rev_mtd_cgo, rev_mtd_pax_prv + rev_mtd_cgo_prv, 0),
+                      (rev_mtd_pax_t1 + rev_mtd_cgo_t1) / (rev_mtd_pax_prv + rev_mtd_cgo_prv) * 100)
+yp_comment <- sprintf("%.1f%%, %s, %.1f%%", 
+                      rev_ytd_pax / rev_ytd_pax_prv * 100, 
+                      myDiff(rev_ytd_pax, rev_ytd_pax_prv, 0),
+                      rev_ytd_pax_t1 / rev_ytd_pax_prv * 100)
+yc_comment <- sprintf("%.1f%%, %s, %.1f%%", 
+                      rev_ytd_cgo / rev_ytd_cgo_prv * 100,
+                      myDiff(rev_ytd_cgo, rev_ytd_cgo_prv, 0),
+                      rev_ytd_cgo_t1 / rev_ytd_cgo_prv * 100)
+yt_comment <- sprintf("%.1f%%, %s, %.1f%%", 
+                      (rev_ytd_pax + rev_ytd_cgo) / (rev_ytd_pax_prv + rev_ytd_cgo_prv) * 100,
+                      myDiff(rev_ytd_pax + rev_ytd_cgo, rev_ytd_pax_prv + rev_ytd_cgo_prv, 0),
+                      (rev_ytd_pax_t1 + rev_ytd_cgo_t1) / (rev_ytd_pax_prv + rev_ytd_cgo_prv) * 100)
+
+
+# End of setup -------------------------------------------------------------------------------------
+```
+
+
+Summary
+=======================================================================
+
+Row 
+-----------------------------------------------------------------------
+### 주간
+
+- `r myDateFormat(wtd_s_date, wtd_e_date)`, 총수익, 억원
+- YoY, +/-, P.I
+
+### PAX: `r wp_comment`
+
+```{r}
+rev <- myFormat(round(rev_wtd_pax_t, 0))
+c <- vbColor(rev_wtd_pax_t, rev_wtd_pax_t_prv)
+valueBox(rev, icon = "fa-user", color = c)
+```
+
+### CGO: `r wc_comment`
+
+```{r}
+rev <- myFormat(round(rev_wtd_cgo_t, 0))
+c <- vbColor(rev_wtd_cgo_t, rev_wtd_cgo_t_prv)
+valueBox(rev, icon = "fa-cube", color = c)
+```
+
+### TTL: `r wt_comment`
+
+```{r}
+rev <- myFormat(round(rev_wtd_pax_t + rev_wtd_cgo_t, 0))
+c <- vbColor(rev_wtd_pax_t + rev_wtd_cgo_t, rev_wtd_pax_t_prv + rev_wtd_cgo_t_prv)
+valueBox(rev, icon = "fa-plane", color = c)
+```
+
+Row
+-----------------------------------------------------------------------
+
+### 월간
+
+- `r myDateFormat(mtd_s_date, mtd_e_date)`, 총수익, 억원
+- YoY, +/-, P.I
+
+### PAX: `r mp_comment`
+
+```{r}
+rev <- myFormat(round(rev_mtd_pax, 0))
+c <- vbColor(rev_mtd_pax, rev_mtd_pax_prv)
+valueBox(rev, icon = "fa-user", color = c)
+```
+
+### CGO: `r mc_comment`
+
+```{r}
+rev <- myFormat(round(rev_mtd_cgo, 0))
+c <- vbColor(rev_mtd_cgo, rev_mtd_cgo_prv)
+valueBox(rev, icon = "fa-cube", color = c)
+```
+
+### TTL: `r mt_comment`
+
+```{r}
+rev <- myFormat(round(rev_mtd_pax + rev_mtd_cgo, 0))
+c <- vbColor(rev_mtd_pax + rev_mtd_cgo, rev_mtd_pax_prv + rev_mtd_cgo_prv)
+valueBox(rev, icon = "fa-plane", color = c)
+```
+
+
+Row
+-----------------------------------------------------------------------
+
+### 년간
+
+- `r myDateFormat(ytd_s_date, ytd_e_date)`, 총수익, 억원 
+- YoY, +/-, P.I
+
+### PAX: `r yp_comment`
+
+```{r}
+rev <- myFormat(round(rev_ytd_pax, 0))
+c <- vbColor(rev_ytd_pax, rev_ytd_pax_prv)
+valueBox(rev, icon = "fa-user", color = c)
+```
+
+### CGO: `r yc_comment`
+
+```{r}
+rev <- myFormat(round(rev_ytd_cgo, 0))
+c <- vbColor(rev_ytd_cgo, rev_ytd_cgo_prv)
+valueBox(rev, icon = "fa-cube", color = c)
+```
+
+### TTL: `r yt_comment`
+
+```{r}
+rev <- myFormat(round(rev_ytd_pax + rev_ytd_cgo, 0))
+c <- vbColor(rev_ytd_pax + rev_ytd_cgo, rev_ytd_pax_prv + rev_ytd_cgo_prv)
+valueBox(rev, icon = "fa-plane", color = c)
+```
+
+
+Row
+-----------------------------------------------------------------------
+
+### 추이
+
+```{r}
+pax <- ts(rev_monthly_pax_t[-length(rev_monthly_pax_t)], 
+          start = c(2013,1,1), frequency = 12)
+hw <- HoltWinters(pax)
+p1 <- predict(hw, n.ahead = 6, prediction.interval = TRUE)
+cgo <- ts(rev_monthly_cgo_t[-length(rev_monthly_pax_t)],
+          start = c(2013,1,1), frequency = 12)
+hw <- HoltWinters(cgo)
+p2 <- predict(hw, n.ahead = 6, prediction.interval = TRUE)
+  
+trend <- cbind(pax, cgo, p1, p2)
+shades <- shade_regions_monthly(rev_monthly_pax_t, 1)
+limits <- trend[shades[1,1],]
+    
+dygraph(trend, main = "Monthly Revenue Trend") %>%
+      #dyAxis("x", drawGrid = FALSE) %>%
+  dySeries("pax", label = "PAX") %>%
+  dySeries("cgo", label = "CGO") %>%
+  dySeries(c("p1.lwr", "p1.fit", "p1.upr"), label = "PAX-p") %>%
+  dySeries(c("p2.lwr", "p2.fit", "p2.upr"), label = "CGO-p") %>%
+  dyShading(from = as.character(mtd_s_date - months(1)),  
+            to   = as.character(mtd_s_date + months(1))) %>%
+  dyShading(from = as.character(mtd_s_date - months(13)),  
+            to   = as.character(mtd_s_date - months(11)),
+            color = "#FFE6E6") %>%
+  dyShading(from = as.character(mtd_s_date - months(25)),  
+            to   = as.character(mtd_s_date - months(23))) %>%
+  dyShading(from = as.character(mtd_s_date - months(37)),  
+            to   = as.character(mtd_s_date - months(35))) %>%
+  dyEvent("2015-06-01", "Mers", labelLoc = "bottom") %>%
+  #dyEvent(mtd_s_date, "", labelLoc = "bottom") %>%
+  dyLimit(as.numeric(limits[3])) %>%
+  dyLimit(as.numeric(limits[6])) %>%
+  dyLegend(showZeroValues = "always", hideOnMouseOut = TRUE) %>%
+  dyRangeSelector(height = 20) 
+```
+
+
+
+Weekly
+=======================================================================
+
+Row 
+-----------------------------------------------------------------------
+
+### 여객 발매: `r wp_s_comment`
+
+```{r}
+rev <- myFormat(round(rev_wtd_pax_s, 0))
+c <- vbColor(rev_wtd_pax_s, rev_wtd_pax_s_prv)
+valueBox(rev, icon = "fa-user", color = c)
+```
+
+### 여객 운송: `r wp_comment`
+
+```{r}
+rev <- myFormat(round(rev_wtd_pax_t, 0))
+c <- vbColor(rev_wtd_pax_t, rev_wtd_pax_t_prv)
+valueBox(rev, icon = "fa-user", color = c)
+```
+
+### 화물 운송: `r wc_comment`
+
+```{r}
+rev <- myFormat(round(rev_wtd_cgo_t, 0))
+c <- vbColor(rev_wtd_cgo_t, rev_wtd_cgo_t_prv)
+valueBox(rev, icon = "fa-cube", color = c)
+```
+
+Row 
+-----------------------------------------------------------------------
+
+### Legend
+
+- 기간: `r myDateFormat(wtd_s_date, wtd_e_date)`
+- 총 노선수익, 억원, 만명, 만톤
+- YoY, +/-, P.I
+
+### 승객 수: `r wp_cnt_comment`
+
+```{r}
+rev <- myFormat(round(pax_count, 1))
+c <- vbColor(pax_count, pax_count_prv)
+valueBox(rev, icon = "fa-user", color = c)
+```
+
+### 화물 중량: `r wc_wt_comment`
+
+```{r}
+rev <- myFormat(round(cgo_wt, 2))
+c <- vbColor(cgo_wt, cgo_wt_prv)
+valueBox(rev, icon = "fa-cube", color = c)
+```
+
+Row {data-height=337}
+-----------------------------------------------------------------------
+
+### Revenue {data-width=600}
+
+```{r}
+datatable(revenue_df_week, options = list(dom = 't'),
+          colnames = c('Gubun', year(wtd_e_date), year(wtd_e_date)-1, '+/-', 'YoY', 'P.I'),
+          class = 'cell-border stripe', rownames = FALSE) %>%
+  formatCurrency(c('this', 'last', 'diff'), '') %>%
+  formatPercentage(c('pct', 'index'), 1)
+```
+
+### Transportation {data-width=400}
+
+```{r}
+datatable(cnt_wt_df_week, options = list(dom = 't'),
+          colnames = c('Gubun', year(wtd_e_date), year(wtd_e_date)-1, '+/-', 'YoY'),
+          class = 'cell-border stripe', rownames = FALSE) %>%
+  formatCurrency(c('this', 'last', 'diff'), '') %>%
+  formatPercentage(c('pct'), 1)
+```
+
+Row
+-----------------------------------------------------------------------
+
+### Trend
+
+```{r}
+weekly_trend <- cbind(rev_weekly_pax_t, rev_weekly_cgo_t)
+names(weekly_trend) <- c("PAX", "CGO")
+    
+shades <- shade_regions_weekly(weekly_trend, 3)
+limits <- weekly_trend[shades[1,1],]
+dygraph(weekly_trend,
+        main = "Weekly Revenue Trend") %>% 
+  dyShading(from = as.character(index(weekly_trend)[shades[1,2]]),  
+            to   = as.character(index(weekly_trend)[shades[1,3]])) %>%
+  dyShading(from = as.character(index(weekly_trend)[shades[2,2]]),  
+            to   = as.character(index(weekly_trend)[shades[2,3]]),
+            color = "#FFE6E6") %>%
+  dyShading(from = as.character(index(weekly_trend)[shades[3,2]]),  
+            to   = as.character(index(weekly_trend)[shades[3,3]])) %>%
+  dyShading(from = as.character(index(weekly_trend)[shades[4,2]]),  
+            to   = as.character(index(weekly_trend)[shades[4,3]])) %>%
+  dyEvent("2015-07-04", "Mers", labelLoc = "bottom") %>%
+  dyLimit(as.numeric(limits[1,1])) %>%
+  dyLimit(as.numeric(limits[1,2])) %>%
+  dyLegend(showZeroValues = "always", hideOnMouseOut = TRUE) %>%
+  dyRangeSelector(height = 20, dateWindow = c(ytd_s_date - years(2), wtd_e_date)) %>%
+  dyRoller(rollPeriod = 0)
+```
+
+
+Monthly
+=======================================================================
+
+Row 
+-----------------------------------------------------------------------
+
+### PAX: `r mp_comment`
+
+```{r}
+rev <- myFormat(round(rev_mtd_pax, 0))
+c <- vbColor(rev_mtd_pax, rev_mtd_pax_prv)
+valueBox(rev, icon = "fa-user", color = c)
+```
+
+### CGO: `r mc_comment`
+
+```{r}
+rev <- myFormat(round(rev_mtd_cgo, 0))
+c <- vbColor(rev_mtd_cgo, rev_mtd_cgo_prv)
+valueBox(rev, icon = "fa-cube", color = c)
+```
+
+### TTL: `r mt_comment`
+
+```{r}
+rev <- myFormat(round(rev_mtd_pax + rev_mtd_cgo, 0))
+c <- vbColor(rev_mtd_pax + rev_mtd_cgo, rev_mtd_pax_prv + rev_mtd_cgo_prv)
+valueBox(rev, icon = "fa-plane", color = c)
+```
+
+Row {data-height=227, .tabset}
+-----------------------------------------------------------------------
+
+### Total Revenue (+FSC)
+
+```{r}
+datatable(revenue_df_month_all, options = list(dom = 't'), 
+          colnames = c('PC', year(wtd_e_date), year(wtd_e_date)-1, '+/-', 'YoY', "P.I"),
+          class = 'cell-border stripe', rownames = FALSE)  %>%
+  formatCurrency(c('this', 'last', 'diff'), '') %>%
+  formatPercentage(c('pct', 'index'), 1)
+```
+
+### Net Revenue (-FSC)
+
+```{r}
+datatable(revenue_df_month_net, options = list(dom = 't'), 
+          colnames = c('PC', year(wtd_e_date), year(wtd_e_date)-1, '+/-', 'YoY'),
+          class = 'cell-border stripe', rownames = FALSE)  %>%
+  formatCurrency(c('this', 'last', 'diff'), '') %>%
+  formatPercentage(c('pct'), 1)
+```
+
+Row
+-----------------------------------------------------------------------
+
+### Trend
+
+```{r}
+pax <- ts(rev_monthly_pax_t[-length(rev_monthly_pax_t)], 
+          start = c(2013,1,1), frequency = 12)
+hw <- HoltWinters(pax)
+p1 <- predict(hw, n.ahead = 6, prediction.interval = TRUE)
+cgo <- ts(rev_monthly_cgo_t[-length(rev_monthly_pax_t)],
+          start = c(2013,1,1), frequency = 12)
+hw <- HoltWinters(cgo)
+p2 <- predict(hw, n.ahead = 6, prediction.interval = TRUE)
+  
+trend <- cbind(pax, cgo, p1, p2)
+shades <- shade_regions_monthly(rev_monthly_pax_t, 1)
+limits <- trend[shades[1,1],]
+    
+dygraph(trend, main = "Monthly Revenue Trend") %>%
+      #dyAxis("x", drawGrid = FALSE) %>%
+  dySeries("pax", label = "PAX") %>%
+  dySeries("cgo", label = "CGO") %>%
+  dySeries(c("p1.lwr", "p1.fit", "p1.upr"), label = "PAX-p") %>%
+  dySeries(c("p2.lwr", "p2.fit", "p2.upr"), label = "CGO-p") %>%
+  dyShading(from = as.character(mtd_s_date - months(1)),  
+            to   = as.character(mtd_s_date + months(1))) %>%
+  dyShading(from = as.character(mtd_s_date - months(13)),  
+            to   = as.character(mtd_s_date - months(11)),
+            color = "#FFE6E6") %>%
+  dyShading(from = as.character(mtd_s_date - months(25)),  
+            to   = as.character(mtd_s_date - months(23))) %>%
+  dyShading(from = as.character(mtd_s_date - months(37)),  
+            to   = as.character(mtd_s_date - months(35))) %>%
+  dyEvent("2015-06-01", "Mers", labelLoc = "bottom") %>%
+  #dyEvent(mtd_s_date, "", labelLoc = "bottom") %>%
+  dyLimit(as.numeric(limits[3])) %>%
+  dyLimit(as.numeric(limits[6])) %>%
+  dyLegend(showZeroValues = "always", hideOnMouseOut = TRUE) %>%
+  dyRangeSelector(height = 20) 
+```
+
+
+Yearly
+=======================================================================
+
+Row 
+-----------------------------------------------------------------------
+
+### PAX: `r yp_comment`
+
+```{r}
+rev <- myFormat(round(rev_ytd_pax, 0))
+c <- vbColor(rev_ytd_pax, rev_ytd_pax_prv)
+valueBox(rev, icon = "fa-user", color = c)
+```
+
+### CGO: `r yc_comment`
+
+```{r}
+rev <- myFormat(round(rev_ytd_cgo, 0))
+c <- vbColor(rev_ytd_cgo, rev_ytd_cgo_prv)
+valueBox(rev, icon = "fa-cube", color = c)
+```
+
+### TTL: `r yt_comment`
+
+```{r}
+rev <- myFormat(round(rev_ytd_pax + rev_ytd_cgo, 0))
+c <- vbColor(rev_ytd_pax + rev_ytd_cgo, rev_ytd_pax_prv + rev_ytd_cgo_prv)
+valueBox(rev, icon = "fa-plane", color = c)
+```
+
+
+Row {data-height=227, .tabset}
+-----------------------------------------------------------------------
+
+### Total Revenue (+FSC)
+
+```{r}
+datatable(revenue_df_year_all, options = list(dom = 't'), 
+          colnames = c('PC', year(wtd_e_date), year(wtd_e_date)-1, '+/-', 'YoY', "P.I"),
+          class = 'cell-border stripe', rownames = FALSE)  %>%
+  formatCurrency(c('this', 'last', 'diff'), '') %>%
+  formatPercentage(c('pct', 'index'), 1)
+```
+
+### Net Revenue(-FSC)
+
+```{r}
+datatable(revenue_df_year_net, options = list(dom = 't'), 
+          colnames = c('PC', year(wtd_e_date), year(wtd_e_date)-1, '+/-', 'YoY'),
+          class = 'cell-border stripe', rownames = FALSE)  %>%
+  formatCurrency(c('this', 'last', 'diff'), '') %>%
+  formatPercentage(c('pct'), 1)
+```
+
+Row
+-----------------------------------------------------------------------
+
+### Trend
+
+```{r}
+pax <- ts(rev_monthly_pax_t[-length(rev_monthly_pax_t)], 
+          start = c(2013,1,1), frequency = 12)
+hw <- HoltWinters(pax)
+p1 <- predict(hw, n.ahead = 6, prediction.interval = TRUE)
+cgo <- ts(rev_monthly_cgo_t[-length(rev_monthly_pax_t)],
+          start = c(2013,1,1), frequency = 12)
+hw <- HoltWinters(cgo)
+p2 <- predict(hw, n.ahead = 6, prediction.interval = TRUE)
+  
+trend <- cbind(pax, cgo, p1, p2)
+shades <- shade_regions_monthly(rev_monthly_pax_t, 1)
+limits <- trend[shades[1,1],]
+    
+dygraph(trend, main = "Monthly Revenue Trend") %>%
+      #dyAxis("x", drawGrid = FALSE) %>%
+  dySeries("pax", label = "PAX") %>%
+  dySeries("cgo", label = "CGO") %>%
+  dySeries(c("p1.lwr", "p1.fit", "p1.upr"), label = "PAX-p") %>%
+  dySeries(c("p2.lwr", "p2.fit", "p2.upr"), label = "CGO-p") %>%
+  dyShading(from = as.character(mtd_s_date - months(1)),  
+            to   = as.character(mtd_s_date + months(1))) %>%
+  dyShading(from = as.character(mtd_s_date - months(13)),  
+            to   = as.character(mtd_s_date - months(11)),
+            color = "#FFE6E6") %>%
+  dyShading(from = as.character(mtd_s_date - months(25)),  
+            to   = as.character(mtd_s_date - months(23))) %>%
+  dyShading(from = as.character(mtd_s_date - months(37)),  
+            to   = as.character(mtd_s_date - months(35))) %>%
+  dyEvent("2015-06-01", "Mers", labelLoc = "bottom") %>%
+  #dyEvent(mtd_s_date, "", labelLoc = "bottom") %>%
+  dyLimit(as.numeric(limits[3])) %>%
+  dyLimit(as.numeric(limits[6])) %>%
+  dyLegend(showZeroValues = "always", hideOnMouseOut = TRUE) %>%
+  dyRangeSelector(height = 20) 
+```
+
+
+
