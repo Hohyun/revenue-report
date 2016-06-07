@@ -11,32 +11,6 @@ bi.dsn <- "ERPDB"
 erp.id <- "rapps"
 erp.pswd <- "zectxk4932"
 
-# Following variable will be available after executing this script --------------------
-#
-# Tables : 
-#  - rev_daily
-#  - rev_monthly_pax_t, rev_monthly_cgo_t
-#  - rev_weekly_pas_s, rev_weekly_pax_t, rev_weekly_cgo_t
-#
-# Variables: MTD(Month to Date), YTD(Year to Date), WTD(Week to Date)
-#  - MTD revenue: rev_mtd_pax, rev_mtd_cgo, rev_mtd_pax_prv, rev_mtd_cgo_prv
-#  - YTD revenue: rev_ytd_pax, rev_ytd_cgo, rev_ytd_pax_prv, rev_ytd_cgo_prv
-#  - WTD revenue: rev_wtd_pax_s,     rev_wtd_pax_t,     rev_wtd_cgo_t,     
-#                 rev_wtd_pax_s_prv, rev_wtd_pax_t_prv, rev_wtd_cgo_t_prv
-#                 pax_count, cgo_wt, pax_count_prv, cgo_wt_prv
-#
-# Index based on last year period average exchange rate
-#  - PAX Sales   Revenue Index: rev_wtd_pax_s1 / rev_wtd_pax_s_prv * 100
-#  - PAX Traffic Revenue Index: rev_wtd_pax_t1 / rev_wtd_pax_t_prv * 100
-#  - CGO Traffic Revenue Index: rev_wtd_cgo_t1 / rev_wtd_cgo_t_prv * 100
-#  - PAX Sales   Revenue Index: rev_mtd_pax_s1 / rev_mtd_pax_s_prv * 100
-#  - PAX Traffic Revenue Index: rev_mtd_pax_t1 / rev_mtd_pax_t_prv * 100
-#  - CGO Traffic Revenue Index: rev_mtd_cgo_t1 / rev_mtd_cgo_t_prv * 100
-#  - PAX Sales   Revenue Index: rev_ytd_pax_s1 / rev_ytd_pax_s_prv * 100
-#  - PAX Traffic Revenue Index: rev_ytd_pax_t1 / rev_ytd_pax_t_prv * 100
-#  - CGO Traffic Revenue Index: rev_ytd_cgo_t1 / rev_ytd_cgo_t_prv * 100
-#
-
 # DB Connection String----------------------------------------------------------------------
 ## ERP connection string
 drv <- dbDriver("Oracle")

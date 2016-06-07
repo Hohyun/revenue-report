@@ -1,3 +1,11 @@
+###################################################################################
+#  Written by: Hohyun Kim
+#  Last updated: 2016-06-07
+#  - This script is shiny app.
+#  - This script calls util.R, prepareData.R and weekly_revenue_report.Rmd
+#  - It will generate weekly_revenue_report.html when clicking update button.
+###################################################################################
+
 library(shiny)
 library(shinydashboard)
 library(dplyr)

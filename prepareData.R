@@ -1,4 +1,44 @@
 
+###################################################################################
+#  Written by: Hohyun Kim
+#  Last updated: 2016-06-07
+#  - This script will be called by app.R (don't execute this script by itself)
+#  - This script is responsible for preparing all data for weekly revenue report
+###################################################################################
+
+# Following variable will be available after executing this script ----------------
+#
+# Tables : 
+#  - rev_daily
+#  - rev_weekly_pax_s,  rev_weekly_pax_t, rev_weekly_cgo_t,
+#    rev_weekly_count,  rev_weekly_wt    
+#  - rev_monthly_pax_s, rev_monthly_pax_t, rev_monthly_cgo_t
+#    rev_monthly_count, rev_monthly_wt
+#  - revenue_df_week, cnt_wt_df_week, revenue_df_month_all, revenue_df_month_net
+#    revenue_df_year_all, revenue_df_year_net,
+#    source_df_week, source_df_month
+#
+# Variables: MTD(Month to Date), YTD(Year to Date), WTD(Week to Date)
+#  - WTD : rev_wtd_pax_s, rev_wtd_pax_t,rev_wtd_cgo_t,
+#          rev_wtd_pax_s_prv, rev_wtd_pax_t_prv, rev_wtd_cgo_t_prv
+#          rev_wtd_pax_s1, rev_wtd_pax_t1, rev_wtd_cgo_t1, --> for calculating performance index
+#          pax_count, cgo_wt, pax_count_prv, cgo_wt_prv
+#  - MTD : rev_mtd_pax, rev_mtd_cgo, rev_mtd_pax_prv, rev_mtd_cgo_prv,
+#          rev_mtd_pax_t1, rev_mtd_cgo_t1
+#  - YTD : rev_ytd_pax, rev_ytd_cgo, rev_ytd_pax_prv, rev_ytd_cgo_prv
+#          rev_ytd_pax_t1, rev_ytd_cgo_t1
+#
+# Index based on last year period average exchange rate
+#  - PAX Sales   Revenue Index: rev_wtd_pax_s1 / rev_wtd_pax_s_prv * 100
+#  - PAX Traffic Revenue Index: rev_wtd_pax_t1 / rev_wtd_pax_t_prv * 100
+#  - CGO Traffic Revenue Index: rev_wtd_cgo_t1 / rev_wtd_cgo_t_prv * 100
+#  - PAX Traffic Revenue Index: rev_mtd_pax_t1 / rev_mtd_pax_t_prv * 100
+#  - CGO Traffic Revenue Index: rev_mtd_cgo_t1 / rev_mtd_cgo_t_prv * 100
+#  - PAX Traffic Revenue Index: rev_ytd_pax_t1 / rev_ytd_pax_t_prv * 100
+#  - CGO Traffic Revenue Index: rev_ytd_cgo_t1 / rev_ytd_cgo_t_prv * 100
+#
+
+
 # Load functions
 source("util.R", encoding = "UTF-8")
 

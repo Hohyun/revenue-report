@@ -1,4 +1,6 @@
 
+options(echo = FALSE)
+
 # Load functions
 source("util.R", encoding = "UTF-8")
 
