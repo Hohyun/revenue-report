@@ -45,10 +45,10 @@ wt_comment <- sprintf("%.1f%%, %s, %.1f%%",
                       (rev_wtd_pax_t1 + rev_wtd_cgo_t1) / (rev_wtd_pax_t_prv + rev_wtd_cgo_t_prv) * 100)
 wp_cnt_comment <- sprintf("%.1f%%, %s", 
                       pax_count / pax_count_prv * 100, 
-                      myDiff(pax_count, pax_count_prv, 0))
+                      myDiff(pax_count, pax_count_prv, 1))
 wc_wt_comment <- sprintf("%.1f%%, %s", 
                       cgo_wt / cgo_wt_prv * 100,
-                      myDiff(cgo_wt, cgo_wt_prv, 0))
+                      myDiff(cgo_wt, cgo_wt_prv, 2))
 mp_comment <- sprintf("%.1f%%, %s, %.1f%%", 
                       rev_mtd_pax / rev_mtd_pax_prv * 100, 
                       myDiff(rev_mtd_pax, rev_mtd_pax_prv, 0),
@@ -82,7 +82,7 @@ yt_comment <- sprintf("%.1f%%, %s, %.1f%%",
 Summary
 =======================================================================
 
-Row 
+Row
 -----------------------------------------------------------------------
 ### 주간
 
@@ -179,10 +179,37 @@ valueBox(rev, icon = "fa-plane", color = c)
 ```
 
 
-Row
+Row {.tabset}
 -----------------------------------------------------------------------
 
-### 추이
+### Weekly Trend
+
+```{r}
+weekly_trend <- cbind(rev_weekly_pax_t, rev_weekly_cgo_t)
+names(weekly_trend) <- c("PAX", "CGO")
+    
+shades <- shade_regions_weekly(weekly_trend, 3)
+limits <- weekly_trend[shades[1,1],]
+dygraph(weekly_trend,
+        main = "Weekly Revenue Trend") %>% 
+  dyShading(from = as.character(index(weekly_trend)[shades[1,2]]),  
+            to   = as.character(index(weekly_trend)[shades[1,3]])) %>%
+  dyShading(from = as.character(index(weekly_trend)[shades[2,2]]),  
+            to   = as.character(index(weekly_trend)[shades[2,3]]),
+            color = "#FFE6E6") %>%
+  dyShading(from = as.character(index(weekly_trend)[shades[3,2]]),  
+            to   = as.character(index(weekly_trend)[shades[3,3]])) %>%
+  dyShading(from = as.character(index(weekly_trend)[shades[4,2]]),  
+            to   = as.character(index(weekly_trend)[shades[4,3]])) %>%
+  dyEvent("2015-07-04", "Mers", labelLoc = "bottom") %>%
+  dyLimit(as.numeric(limits[1,1])) %>%
+  dyLimit(as.numeric(limits[1,2])) %>%
+  dyLegend(showZeroValues = "always", hideOnMouseOut = TRUE) %>%
+  dyRangeSelector(height = 20, dateWindow = c(ytd_s_date - years(2), wtd_e_date)) %>%
+  dyRoller(rollPeriod = 0)
+```
+
+### Monthly Trend
 
 ```{r}
 pax <- ts(rev_monthly_pax_t[-length(rev_monthly_pax_t)], 
@@ -220,7 +247,6 @@ dygraph(trend, main = "Monthly Revenue Trend") %>%
   dyLegend(showZeroValues = "always", hideOnMouseOut = TRUE) %>%
   dyRangeSelector(height = 20) 
 ```
-
 
 
 Weekly
@@ -301,10 +327,10 @@ datatable(cnt_wt_df_week, options = list(dom = 't'),
   formatPercentage(c('pct'), 1)
 ```
 
-Row
+Row {.tabset}
 -----------------------------------------------------------------------
 
-### Trend
+### Revenue Trend
 
 ```{r}
 weekly_trend <- cbind(rev_weekly_pax_t, rev_weekly_cgo_t)
@@ -329,6 +355,37 @@ dygraph(weekly_trend,
   dyLegend(showZeroValues = "always", hideOnMouseOut = TRUE) %>%
   dyRangeSelector(height = 20, dateWindow = c(ytd_s_date - years(2), wtd_e_date)) %>%
   dyRoller(rollPeriod = 0)
+```
+
+### Volume Trend
+
+```{r}
+    weekly_trend <- cbind(rev_weekly_count, rev_weekly_wt)
+    names(weekly_trend) <- c("PAX_Q", "CGO_WT")
+    
+    shades <- shade_regions_weekly(weekly_trend, 3)
+    limits <- weekly_trend[shades[1,1],]
+    
+    dygraph(weekly_trend,
+            main = "Weekly Volume Trend") %>% 
+      dyAxis("y",  label = "PAX COUNT", valueRange = c(0, 70)) %>%
+      dyAxis("y2", label = "CGO WT", valueRange = c(0, 14)) %>%
+      dySeries("CGO_WT", axis = 'y2') %>%
+      dyShading(from = as.character(index(weekly_trend)[shades[1,2]]),  
+                to   = as.character(index(weekly_trend)[shades[1,3]])) %>%
+      dyShading(from = as.character(index(weekly_trend)[shades[2,2]]),  
+                to   = as.character(index(weekly_trend)[shades[2,3]]),
+                color = "#FFE6E6") %>%
+      dyShading(from = as.character(index(weekly_trend)[shades[3,2]]),  
+                to   = as.character(index(weekly_trend)[shades[3,3]])) %>%
+      dyShading(from = as.character(index(weekly_trend)[shades[4,2]]),  
+                to   = as.character(index(weekly_trend)[shades[4,3]])) %>%
+      dyEvent("2015-07-04", "Mers", labelLoc = "bottom") %>%
+      dyLimit(as.numeric(limits[1,1])) %>%
+      dyLimit(as.numeric(limits[1,2]) * 5) %>%
+      dyLegend(showZeroValues = "always", hideOnMouseOut = TRUE) %>%
+      dyRangeSelector(height = 20, dateWindow = c(ytd_s_date - years(2), wtd_e_date)) %>%
+      dyRoller(rollPeriod = 0)
 ```
 
 
@@ -482,47 +539,7 @@ datatable(revenue_df_year_net, options = list(dom = 't'),
   formatPercentage(c('pct'), 1)
 ```
 
-Row
------------------------------------------------------------------------
 
-### Trend
-
-```{r}
-pax <- ts(rev_monthly_pax_t[-length(rev_monthly_pax_t)], 
-          start = c(2013,1,1), frequency = 12)
-hw <- HoltWinters(pax)
-p1 <- predict(hw, n.ahead = 6, prediction.interval = TRUE)
-cgo <- ts(rev_monthly_cgo_t[-length(rev_monthly_pax_t)],
-          start = c(2013,1,1), frequency = 12)
-hw <- HoltWinters(cgo)
-p2 <- predict(hw, n.ahead = 6, prediction.interval = TRUE)
-  
-trend <- cbind(pax, cgo, p1, p2)
-shades <- shade_regions_monthly(rev_monthly_pax_t, 1)
-limits <- trend[shades[1,1],]
-    
-dygraph(trend, main = "Monthly Revenue Trend") %>%
-      #dyAxis("x", drawGrid = FALSE) %>%
-  dySeries("pax", label = "PAX") %>%
-  dySeries("cgo", label = "CGO") %>%
-  dySeries(c("p1.lwr", "p1.fit", "p1.upr"), label = "PAX-p") %>%
-  dySeries(c("p2.lwr", "p2.fit", "p2.upr"), label = "CGO-p") %>%
-  dyShading(from = as.character(mtd_s_date - months(1)),  
-            to   = as.character(mtd_s_date + months(1))) %>%
-  dyShading(from = as.character(mtd_s_date - months(13)),  
-            to   = as.character(mtd_s_date - months(11)),
-            color = "#FFE6E6") %>%
-  dyShading(from = as.character(mtd_s_date - months(25)),  
-            to   = as.character(mtd_s_date - months(23))) %>%
-  dyShading(from = as.character(mtd_s_date - months(37)),  
-            to   = as.character(mtd_s_date - months(35))) %>%
-  dyEvent("2015-06-01", "Mers", labelLoc = "bottom") %>%
-  #dyEvent(mtd_s_date, "", labelLoc = "bottom") %>%
-  dyLimit(as.numeric(limits[3])) %>%
-  dyLimit(as.numeric(limits[6])) %>%
-  dyLegend(showZeroValues = "always", hideOnMouseOut = TRUE) %>%
-  dyRangeSelector(height = 20) 
-```
 
 
 
