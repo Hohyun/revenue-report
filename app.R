@@ -705,8 +705,8 @@ server <- function(input, output) {
   )
   
   output$dygraph_weekly_rev <- renderDygraph({
-    weekly_trend <- cbind(rev_weekly_pax_t, rev_weekly_cgo_t)
-    names(weekly_trend) <- c("PAX", "CGO")
+    weekly_trend <- cbind(rev_weekly_pax_s, rev_weekly_pax_t, rev_weekly_cgo_t)
+    names(weekly_trend) <- c("PAX_S", "PAX_T", "CGO_T")
     
     shades <- shade_regions_weekly(weekly_trend, 3)
     limits <- weekly_trend[shades[1,1],]
@@ -721,9 +721,10 @@ server <- function(input, output) {
                 to   = as.character(index(weekly_trend)[shades[3,3]])) %>%
       dyShading(from = as.character(index(weekly_trend)[shades[4,2]]),  
                 to   = as.character(index(weekly_trend)[shades[4,3]])) %>%
-      dyEvent("2015-07-04", "Mers", labelLoc = "bottom") %>%
+      dyEvent("2015-06-20", "Mers", labelLoc = "bottom") %>%
       dyLimit(as.numeric(limits[1,1])) %>%
       dyLimit(as.numeric(limits[1,2])) %>%
+      dyLimit(as.numeric(limits[1,3])) %>%
       dyLegend(showZeroValues = "always", hideOnMouseOut = TRUE) %>%
       dyRangeSelector(height = 20, dateWindow = c(ytd_s_date - years(2), wtd_e_date)) %>%
       dyRoller(rollPeriod = 0)
@@ -750,7 +751,7 @@ server <- function(input, output) {
                 to   = as.character(index(weekly_trend)[shades[3,3]])) %>%
       dyShading(from = as.character(index(weekly_trend)[shades[4,2]]),  
                 to   = as.character(index(weekly_trend)[shades[4,3]])) %>%
-      dyEvent("2015-07-04", "Mers", labelLoc = "bottom") %>%
+      dyEvent("2015-06-20", "Mers", labelLoc = "bottom") %>%
       dyLimit(as.numeric(limits[1,1])) %>%
       dyLimit(as.numeric(limits[1,2]) * 5) %>%
       dyLegend(showZeroValues = "always", hideOnMouseOut = TRUE) %>%
