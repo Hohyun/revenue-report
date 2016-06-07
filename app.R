@@ -331,7 +331,7 @@ dashboard_week_count_wt <- fluidRow(
              color = myColor(cgo_wt, cgo_wt_prv))
   ),
 
-  box(width = 12,
+  column(12,
     datatable(cnt_wt_df_week, options = list(dom = 't'),
              colnames = c('Gubun', year(wtd_e_date), year(wtd_e_date)-1, '+/-', 'YoY'),
              class = 'cell-border stripe', rownames = FALSE) %>%
