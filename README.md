@@ -20,3 +20,10 @@
 
 - open app.R
 - run 
+
+### Batch script: make-all.ps1
+
+- right click file "make-all.ps1"
+- select "run in powershell"
+- this script will prepare dataset and generate html-report
+- you can open shiny-app or html-report at the end of script

@@ -1,6 +1,3 @@
-
-options(echo = FALSE)
-
 # Load functions
 source("util.R", encoding = "UTF-8")
 
@@ -180,16 +177,6 @@ rev_wtd_cgo_t_prv <- getAccumulatedRevenue(wtd_prv_s_date, wtd_prv_e_date)[3]
 pax_count_prv     <- getAccumulatedPaxCount(wtd_prv_s_date, wtd_prv_e_date)
 cgo_wt_prv        <- getAccumulatedCgoWt(wtd_prv_s_date, wtd_prv_e_date)
 
-## Make data: for detail view, source view  ------------------------------------
-revenue_df_week <- make_revenue_df_week()
-cnt_wt_df_week  <- make_cnt_wt_df_week()
-revenue_df_month_all <- make_revenue_df_month_all()
-revenue_df_month_net <- make_revenue_df_month_net()
-revenue_df_year_all <- make_revenue_df_year_all()
-revenue_df_year_net <- make_revenue_df_year_net()
-source_df_week  <- make_source_df_week()
-source_df_month <- make_source_df_month()
-
 ## Calculate revenue using last year's period average exchange rate ---------------------
 ### Weekly: rev_wtd_pax_s1, rev_wtd_pax_t1, rev_wtd_cgo_t1 ---------------------------------------------
 #### PAX sales
@@ -256,19 +243,27 @@ rev_ytd_cgo_t1 <- mutate(rev_ytd_cgo_t1,
                          KRW_REV = (as.numeric(REVENUE) * as.numeric(ACCT_RATE))/100000000)
 rev_ytd_cgo_t1 <- sum(rev_ytd_cgo_t1[, "KRW_REV"]) # use this one
 
+## Make data: for detail view, source view  ------------------------------------
+revenue_df_week <- make_revenue_df_week()
+cnt_wt_df_week  <- make_cnt_wt_df_week()
+revenue_df_month_all <- make_revenue_df_month_all()
+revenue_df_month_net <- make_revenue_df_month_net()
+revenue_df_year_all <- make_revenue_df_year_all()
+revenue_df_year_net <- make_revenue_df_year_net()
+source_df_week  <- make_source_df_week()
+source_df_month <- make_source_df_month()
+
+display.lap.time(); lap.time <- proc.time()
+
 # DB disconnection ------------------------------------------------------------------
 nzDisconnect()
 
-cat("Data preparation finished.\n")
-# save dataset ----------------------------------------------------------------------
-cat("Save all data into revenue.RData ...\n")
+# save dataset and html report creation ---------------------------------------------
+progressMessage(11, steps, "Save data & generate html report ...")
 last_updated_time = now()
 save.image("revenue.RData")
-
-# html report creation ---------------------------------------------------------------
-display.lap.time(); lap.time <- proc.time()
-progressMessage(11, steps, "Generating html report ...")
 rmarkdown::render("weekly_revenue_report.Rmd", encoding = "utf-8")
+display.lap.time(); lap.time <- proc.time()
 
 end.time <- proc.time()
 cat(sprintf("Total running time: %.2f seconds\n", end.time - start.time)[3])
