@@ -811,7 +811,7 @@ server <- function(input, output) {
     })
     
     # report creation for e-mail
-    rmarkdown::render("weekly_revenue_report.Rmd", encoding = "utf-8")
+    rmarkdown::render("weekly-revenue-report.Rmd", encoding = "utf-8")
     
     output$messageMenu <- renderMenu({
       dropdownMenu(type = "notifications",

@@ -21,9 +21,10 @@
 - open app.R
 - run 
 
-### Batch script: make-all.ps1
+### Powershell script for automation
 
-- right click file "make-all.ps1"
-- select "run in powershell"
-- this script will prepare dataset and generate html-report
-- you can open shiny-app or html-report at the end of script
+- make-data.ps1: make dataset and generate html-report
+- send-mail.ps1: send email through outlook
+- send-and-mail.ps1:  make dataset, generate html-report & send email
+
+

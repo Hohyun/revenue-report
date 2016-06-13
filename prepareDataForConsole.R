@@ -262,7 +262,7 @@ nzDisconnect()
 progressMessage(11, steps, "Save data & generate html report ...")
 last_updated_time = now()
 save.image("revenue.RData")
-rmarkdown::render("weekly_revenue_report.Rmd", encoding = "utf-8")
+rmarkdown::render("weekly-revenue-report.Rmd", encoding = "utf-8")
 display.lap.time(); lap.time <- proc.time()
 
 end.time <- proc.time()
